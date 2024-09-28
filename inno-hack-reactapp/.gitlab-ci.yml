@@ -1,0 +1,29 @@
+stages:
+  - build
+  - deploy
+
+# Этап сборки
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd inno-hack-reactapp
+    - docker build -t my-react-app .
+    - docker save my-react-app > my-react-app.tar
+  artifacts:
+    paths:
+      - my-react-app.tar
+
+# Этап развертывания
+deploy:
+  stage: deploy
+  image: docker:latest
+  script:
+    - echo "Deploying to server..."
+    - ssh root@194.87.80.211 "mkdir -p /path/to/deploy/"
+    - scp my-react-app.tar root@194.87.80.211:/path/to/deploy/my-react-app.tar
+    - ssh root@194.87.80.211 "docker load < /path/to/deploy/my-react-app.tar"
+    - ssh root@194.87.80.211 "docker rm -f my-react-app || true"
+    - ssh root@194.87.80.211 "docker run -d -p 80:80 --name my-react-app my-react-app"
